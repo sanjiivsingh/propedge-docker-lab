@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PropEdge | Trader Portal</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#0b1020;color:#e8edf7}
+.login{min-height:100vh;display:grid;place-items:center}.loginbox,.card{background:#111a2d;border:1px solid #263451;border-radius:14px;padding:25px}
+.loginbox{width:360px}.field{margin:15px 0}.field input{width:100%;padding:10px;background:#0b1020;color:#fff;border:1px solid #34425f}
+button,.link{padding:10px 14px;border:0;border-radius:8px;background:#2f7cff;color:white;cursor:pointer;text-decoration:none}
+.shell{display:flex;min-height:100vh}.side{width:220px;background:#0d1426;padding:25px}.main{padding:28px;flex:1}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.value{font-size:27px;font-weight:bold;margin-top:8px}.muted{color:#8f9bb2}.panel{margin-top:18px}
+.green{color:#35d28a}.red{color:#ff637d}table{width:100%;border-collapse:collapse}td,th{padding:10px;border-bottom:1px solid #25304a;text-align:left}
+.hidden{display:none}.error{color:#ff637d}@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="login" class="login">
+<div class="loginbox">
+<h1>Prop<span style="color:#3e8cff">Edge</span></h1>
+<p class="muted">Trader Risk & Performance Portal</p>
+<div class="field"><label>Username</label><input id="username" value="trader"></div>
+<div class="field"><label>Password</label><input id="password" type="password" value="trader123"></div>
+<button onclick="doLogin()">Sign in</button><p id="loginError" class="error"></p>
+</div></div>
+
+<div id="app" class="shell hidden">
+<aside class="side">
+<h2>Prop<span style="color:#3e8cff">Edge</span></h2>
+<p>Overview</p><p class="muted">Risk</p><p class="muted">Performance</p><hr>
+<p>Trading Simulator</p><a class="link" href="/trading/" target="_blank">Open Simulator</a>
+</aside>
+<main class="main">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div><p class="muted">Welcome back, trader</p><h1>Account Overview</h1></div>
+<button onclick="logout()">Sign out</button>
+</div>
+
+<div class="cards">
+<div class="card"><div class="muted">BALANCE</div><div id="balance" class="value">$50,000</div></div>
+<div class="card"><div class="muted">TOTAL P&amp;L</div><div id="pnl" class="value">$0</div></div>
+<div class="card"><div class="muted">WIN RATE</div><div id="winrate" class="value">0%</div></div>
+<div class="card"><div class="muted">STATUS</div><div id="status" class="value green">PASSING</div></div>
+</div>
+
+<div class="card panel"><h2>Equity Curve</h2><div id="curve" style="height:160px;display:flex;align-items:end;gap:5px"></div></div>
+
+<div class="cards panel">
+<div class="card"><div class="muted">DAILY P&amp;L</div><div id="daily" class="value">$0</div></div>
+<div class="card"><div class="muted">DRAWDOWN</div><div id="drawdown" class="value">$0</div></div>
+<div class="card"><div class="muted">TRADES</div><div id="count" class="value">0</div></div>
+<div class="card"><div class="muted">MAX DD LIMIT</div><div class="value">$2,500</div></div>
+</div>
+
+<div class="card panel"><h2>Recent Trades</h2>
+<table><thead><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&amp;L</th></tr></thead>
+<tbody id="trades"></tbody></table></div>
+</main></div>
+
+<script>
+const loginPanel = document.getElementById("login");
+const appPanel = document.getElementById("app");
+
+async function doLogin(){
+    const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            username: username.value,
+            password: password.value
+        })
+    });
+
+    if(response.ok){
+        sessionStorage.authenticated = "1";
+        showApp();
+    } else {
+        loginError.textContent = "Invalid demo credentials";
+    }
+}
+
+function showApp(){
+    loginPanel.classList.add("hidden");
+    appPanel.classList.remove("hidden");
+    refresh();
+}
+function logout(){
+    sessionStorage.removeItem("authenticated");
+    location.reload();
+}
+async function refresh(){
+ const r=await fetch("/api/dashboard"); if(!r.ok){logout();return}
+ const d=await r.json(),money=x=>"$"+Number(x).toFixed(2);
+ balance.textContent=money(d.balance);pnl.textContent=money(d.total_pnl);
+ winrate.textContent=d.win_rate.toFixed(1)+"%";status.textContent=d.status;
+ daily.textContent=money(d.daily_pnl);drawdown.textContent=money(d.drawdown);count.textContent=d.total_trades;
+ pnl.className="value "+(d.total_pnl>=0?"green":"red");daily.className="value "+(d.daily_pnl>=0?"green":"red");
+ status.className="value "+(d.status==="PASSING"?"green":"red");
+ trades.innerHTML=d.recent_trades.map(t=>`<tr><td>${t.symbol}</td><td>${t.side}</td><td>${t.entry_price}</td><td>${t.exit_price}</td><td class="${t.pnl>=0?"green":"red"}">$${t.pnl.toFixed(2)}</td></tr>`).join("");
+ const p=d.equity_curve,min=Math.min(...p),max=Math.max(...p),range=max-min||1;
+ curve.innerHTML=p.map(v=>`<div style="flex:1;background:#3e8cff;height:${25+((v-min)/range)*120}px"></div>`).join("");
+}
+if(sessionStorage.authenticated==="1")showApp();
+</script>
+</body>
+</html>
