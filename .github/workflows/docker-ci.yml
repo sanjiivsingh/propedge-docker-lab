@@ -1,0 +1,26 @@
+name: "Docker Container CI"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  compose-lint-and-build:
+    name: "Compose Validation & Image Build"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        run: docker compose -f compose.yaml config
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Multi-Service Stack
+        run: docker compose -f compose.yaml build --parallel

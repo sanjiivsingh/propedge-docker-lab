@@ -1,0 +1,94 @@
+name: propedge-trading-platform
+
+services:
+  db:
+    build:
+      context: ./05-database
+    container_name: propedge-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trading
+      POSTGRES_USER: trader
+      POSTGRES_PASSWORD: traderpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trader -d trading"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - data-net
+
+  trading-app:
+    build:
+      context: ./03-trading-simulator
+    container_name: propedge-trading-simulator
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    networks:
+      - backend-net
+      - data-net
+
+  backend:
+    build:
+      context: ./02-backend-service
+    container_name: propedge-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_NAME: trading
+      DB_USER: trader
+      DB_PASSWORD: traderpass
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - frontend-net
+      - data-net
+
+  ingestion:
+    build:
+      context: ./04-ingestion-service
+    container_name: propedge-ingestion
+    restart: unless-stopped
+    environment:
+      TRADING_URL: http://trading-app:5002
+      POLL_INTERVAL: 3
+      DB_HOST: db
+      DB_NAME: trading
+      DB_USER: trader
+      DB_PASSWORD: traderpass
+    depends_on:
+      db:
+        condition: service_healthy
+      trading-app:
+        condition: service_started
+    networks:
+      - backend-net
+      - data-net
+
+  dashboard:
+    build:
+      context: ./01-main-dashboard
+    container_name: propedge-dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - frontend-net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+  data-net:
+    driver: bridge
