@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/Database-PostgreSQL_16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Proxy-Nginx_Alpine-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
   <img src="https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI/CD" />
+  <img src="https://img.shields.io/badge/Status-Container_Lab_--_Statically_Validated-10B981?style=for-the-badge" alt="Status" />
 </p>
 
 </div>
@@ -31,20 +32,20 @@
 
 ```mermaid
 flowchart TD
-    Client["🌐 Trader Browser"] -->|Port 8080| Dashboard["🖥️ Nginx Main Dashboard\n(propedge-dashboard)"]
+    Client["Trader Browser"] -->|Port 8080| Dashboard["Nginx Main Dashboard<br/>(propedge-dashboard)"]
 
-    subgraph FrontendNet["🌐 frontend-net (Bridge)"]
-        Dashboard -->|Proxy /api| Backend["⚙️ Backend Service\n(propedge-backend:5000)"]
+    subgraph FrontendNet["frontend-net (Bridge)"]
+        Dashboard -->|Proxy /api| Backend["Backend Service<br/>(propedge-backend:5000)"]
     end
 
-    subgraph BackendNet["🔄 backend-net (Bridge)"]
-        Simulator["📈 Trading Simulator\n(propedge-trading-simulator:5002)"]
-        Ingestion["⚡ Ingestion Service\n(propedge-ingestion:5001)"]
+    subgraph BackendNet["backend-net (Bridge)"]
+        Simulator["Trading Simulator<br/>(propedge-trading-simulator:5002)"]
+        Ingestion["Ingestion Service<br/>(propedge-ingestion:5001)"]
         Ingestion -->|Polls Order Book| Simulator
     end
 
-    subgraph DataNet["🔒 data-net (Bridge - Isolated)"]
-        Backend -->|Query Trade Data| DB[("🗄️ PostgreSQL 16 DB\n(propedge-db:5432)")]
+    subgraph DataNet["data-net (Bridge - Isolated)"]
+        Backend -->|Query Trade Data| DB[("PostgreSQL 16 DB<br/>(propedge-db:5432)")]
         Ingestion -->|Insert Transactions| DB
     end
 
@@ -76,8 +77,8 @@ flowchart TD
 
 ```bash
 # Clone and spin up all microservices with parallel build
-git clone https://github.com/sanjiivsingh/PropEdge-Docker-Lab.git
-cd PropEdge-Docker-Lab
+git clone https://github.com/sanjiivsingh/propedge-docker-lab.git
+cd propedge-docker-lab
 
 docker compose -f compose.yaml up -d --build
 ```
@@ -110,6 +111,16 @@ docker compose -f compose.yaml logs -f ingestion
 2. **Health Check Orchestration:** Backend and Ingestion services utilize `condition: service_healthy` depending on PostgreSQL's `pg_isready` probe before starting.
 3. **Graceful Degradation:** All services run with automatic container restarts (`restart: unless-stopped`).
 4. **Volume Persistence:** Data is retained safely across container updates in named volume `postgres_data`.
+
+---
+
+## 👨‍💻 Author & Cloud Consultant
+
+**Sanjeev Singh**  
+Senior Azure Cloud Architect & DevSecOps Platform Engineer  
+* 🌐 **Portfolio**: [sanjeevsingh.oneps.in](https://sanjeevsingh.oneps.in)  
+* 💼 **LinkedIn**: [linkedin.com/in/sanjiivsingh](https://linkedin.com/in/sanjiivsingh)  
+* 🐙 **GitHub**: [github.com/sanjiivsingh](https://github.com/sanjiivsingh)
 
 ---
 
